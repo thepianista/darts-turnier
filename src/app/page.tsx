@@ -1,65 +1,302 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export default function LandingPage() {
+  const router = useRouter();
+  const [mode, setMode] = useState<"choose" | "create" | "join">("choose");
+  const [name, setName] = useState("");
+  const [pin, setPin] = useState("");
+  const [bestOf, setBestOf] = useState("3");
+  const [joinPin, setJoinPin] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [created, setCreated] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const handleCreate = async () => {
+    setError("");
+    if (!name.trim()) {
+      setError("Turniername erforderlich");
+      return;
+    }
+    if (!/^\d{4}$/.test(pin)) {
+      setError("PIN muss 4 Ziffern haben");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/tournaments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          pin,
+          best_of: parseInt(bestOf),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Fehler beim Erstellen");
+        return;
+      }
+
+      const tournament = await res.json();
+      localStorage.setItem(`pin_${tournament.id}`, pin);
+      setCreated(tournament);
+    } catch {
+      setError("Verbindungsfehler");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJoin = async () => {
+    setError("");
+    if (!/^\d{4}$/.test(joinPin)) {
+      setError("PIN muss 4 Ziffern haben");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/tournaments/find-by-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: joinPin }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Turnier nicht gefunden");
+        return;
+      }
+
+      const { tournament_id } = await res.json();
+      localStorage.setItem(`pin_${tournament_id}`, joinPin);
+      router.push(`/admin/${tournament_id}`);
+    } catch {
+      setError("Verbindungsfehler");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (created) {
+    const boardUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/board/${created.id}`
+        : "";
+
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center text-2xl">
+              Turnier erstellt!
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-center">
+              <p className="text-lg font-semibold">{created.name}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                PIN: <span className="font-mono font-bold text-lg">{pin}</span>
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground text-center">
+                Scoreboard-Link (für TV/Beamer):
+              </p>
+              <div className="bg-muted p-3 rounded-md text-center">
+                <code className="text-sm break-all">{boardUrl}</code>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Button
+                size="lg"
+                className="w-full text-lg h-14"
+                onClick={() => router.push(`/admin/${created.id}`)}
+              >
+                Zum Admin-Panel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(boardUrl);
+                }}
+              >
+                Scoreboard-Link kopieren
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-center text-3xl">
+            Darts Turnier
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {mode === "choose" && (
+            <div className="flex flex-col gap-4">
+              <Button
+                size="lg"
+                className="w-full text-lg h-14"
+                onClick={() => setMode("create")}
+              >
+                Neues Turnier erstellen
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full text-lg h-14"
+                onClick={() => setMode("join")}
+              >
+                Turnier beitreten
+              </Button>
+            </div>
+          )}
+
+          {mode === "create" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Turniername</Label>
+                <Input
+                  id="name"
+                  placeholder="z.B. Freitagsturnier"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="h-12 text-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pin">Admin-PIN (4 Ziffern)</Label>
+                <Input
+                  id="pin"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="0000"
+                  value={pin}
+                  onChange={(e) =>
+                    setPin(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  className="h-12 text-lg font-mono text-center tracking-widest"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Best of</Label>
+                <Select value={bestOf} onValueChange={(v) => v && setBestOf(v)}>
+                  <SelectTrigger className="h-12 text-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Best of 1</SelectItem>
+                    <SelectItem value="3">Best of 3</SelectItem>
+                    <SelectItem value="5">Best of 5</SelectItem>
+                    <SelectItem value="7">Best of 7</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {error && (
+                <p className="text-destructive text-sm text-center">{error}</p>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-12"
+                  onClick={() => {
+                    setMode("choose");
+                    setError("");
+                  }}
+                >
+                  Zurück
+                </Button>
+                <Button
+                  className="flex-1 h-12 text-lg"
+                  onClick={handleCreate}
+                  disabled={loading}
+                >
+                  {loading ? "Erstelle..." : "Erstellen"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {mode === "join" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="joinPin">Turnier-PIN eingeben</Label>
+                <Input
+                  id="joinPin"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="0000"
+                  value={joinPin}
+                  onChange={(e) =>
+                    setJoinPin(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  className="h-12 text-lg font-mono text-center tracking-widest"
+                  autoFocus
+                />
+              </div>
+
+              {error && (
+                <p className="text-destructive text-sm text-center">{error}</p>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-12"
+                  onClick={() => {
+                    setMode("choose");
+                    setError("");
+                  }}
+                >
+                  Zurück
+                </Button>
+                <Button
+                  className="flex-1 h-12 text-lg"
+                  onClick={handleJoin}
+                  disabled={loading}
+                >
+                  {loading ? "Suche..." : "Beitreten"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
