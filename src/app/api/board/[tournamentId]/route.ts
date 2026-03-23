@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import sql from "@/lib/db";
+import sql, { parseDarts } from "@/lib/db";
 
 // GET /api/board/[tournamentId] - Aggregated scoreboard data
 export async function GET(
@@ -81,7 +81,7 @@ export async function GET(
 
         if (turns.length > 0) {
           const lastTurn = turns[turns.length - 1];
-          const darts = (lastTurn.darts as unknown[]) || [];
+          const darts = parseDarts(lastTurn.darts);
           if (darts.length < 3 && !lastTurn.is_bust) {
             currentTurn = lastTurn;
           }
@@ -105,7 +105,7 @@ export async function GET(
         let totalScore = 0;
         let totalTurns = 0;
         for (const t of playerTurns) {
-          const darts = (t.darts as unknown[]) || [];
+          const darts = parseDarts(t.darts);
           if (darts.length === 0) continue;
           if (t.is_bust) {
             totalTurns++;
@@ -140,7 +140,7 @@ export async function GET(
         let totalScore = 0;
         let highestTurn = 0;
         for (const t of winnerTurns) {
-          const darts = (t.darts as unknown[]) || [];
+          const darts = parseDarts(t.darts);
           totalDarts += darts.length;
           const turnScore = t.is_bust ? 0 : (t.remaining_before as number) - (t.remaining_after as number);
           totalScore += turnScore;
@@ -164,8 +164,8 @@ export async function GET(
         player1_legs_won: p1Legs.count,
         player2_legs_won: p2Legs.count,
         active_leg: activeLeg || null,
-        turns,
-        current_turn: currentTurn,
+        turns: turns.map((t: Record<string, unknown>) => ({ ...t, darts: parseDarts(t.darts) })),
+        current_turn: currentTurn ? { ...currentTurn, darts: parseDarts(currentTurn.darts) } : null,
         player1_avg: calcAvg(activeMatch.player1_id as string),
         player2_avg: calcAvg(activeMatch.player2_id as string),
         leg_summary: legSummary,
