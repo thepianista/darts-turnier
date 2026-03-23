@@ -2,10 +2,11 @@
 
 ## Quick Reference
 
-- **Framework:** Next.js (App Router) + TypeScript strict mode
+- **Framework:** Next.js 16 (App Router) + TypeScript strict mode
 - **Styling:** Tailwind CSS v4 + shadcn/ui (base-ui)
 - **DB:** PostgreSQL 18 via postgres.js (raw SQL, no ORM)
-- **Deploy:** Vercel
+- **Deploy:** Vercel ([darts-turnier.vercel.app](https://darts-turnier.vercel.app/))
+- **JSONB caveat:** postgres.js returns JSONB as strings — always use `parseDarts()` from `@/lib/db` when reading the `darts` column
 
 ## Commands
 
