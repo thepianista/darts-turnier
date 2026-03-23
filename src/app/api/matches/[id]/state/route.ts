@@ -4,10 +4,10 @@ import sql from "@/lib/db";
 // GET /api/matches/[matchId]/state - Get full match state
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ matchId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { matchId } = await params;
+    const matchId = (await params).id;
 
     const [match] = await sql`
       SELECT m.*,

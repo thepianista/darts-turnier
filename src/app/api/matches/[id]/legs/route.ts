@@ -4,10 +4,10 @@ import sql from "@/lib/db";
 // POST /api/matches/[matchId]/legs - Create next leg
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ matchId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { matchId } = await params;
+    const matchId = (await params).id;
     const { starting_player_id } = await request.json();
 
     if (!starting_player_id) {
