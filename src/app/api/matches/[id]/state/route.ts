@@ -59,13 +59,16 @@ export async function GET(
         ORDER BY turn_number ASC
       `;
 
-      // Current turn is the last one
+      // Current turn is the last one with < 3 darts and not bust
       if (turns.length > 0) {
         const lastTurn = turns[turns.length - 1];
         const darts = (lastTurn.darts as unknown[]) || [];
         if (darts.length < 3 && !lastTurn.is_bust) {
           currentTurn = lastTurn;
         }
+        // If last turn is complete, current_turn stays null.
+        // The frontend will show buttons as disabled until the
+        // next turn is created by the turns PATCH endpoint.
       }
     }
 

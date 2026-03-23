@@ -7,13 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -65,6 +58,7 @@ export default function AdminPage({
   const [matchPlayer2, setMatchPlayer2] = useState("");
   const [error, setError] = useState("");
   const [activeMatch, setActiveMatch] = useState<Match | null>(null);
+  const [showScoring, setShowScoring] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePin, setDeletePin] = useState("");
   const [sessionToken, setSessionToken] = useState("");
@@ -86,6 +80,7 @@ export default function AdminPage({
           (m: Match) => m.status === "active"
         );
         setActiveMatch(active || null);
+        if (!active) setShowScoring(false);
       }
     } catch {
       setError("Verbindungsfehler");
@@ -205,6 +200,7 @@ export default function AdminPage({
     });
 
     if (res.ok) {
+      setShowScoring(true);
       loadData();
     } else {
       const data = await res.json();
@@ -271,19 +267,18 @@ export default function AdminPage({
   }
 
   // Active match scoring view
-  if (activeMatch) {
+  if (activeMatch && showScoring) {
     return (
       <DartScoring
         match={activeMatch}
         tournament={tournament!}
         sessionToken={sessionToken}
         onMatchEnd={() => {
-          setActiveMatch(null);
+          setShowScoring(false);
           loadData();
         }}
         onBack={() => {
-          setActiveMatch(null);
-          loadData();
+          setShowScoring(false);
         }}
       />
     );
@@ -380,43 +375,37 @@ export default function AdminPage({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Spieler 1</Label>
-                <Select
+                <select
                   value={matchPlayer1}
-                  onValueChange={(v) => v && setMatchPlayer1(v)}
+                  onChange={(e) => setMatchPlayer1(e.target.value)}
+                  className="h-12 w-full rounded-lg border border-input bg-transparent px-3 text-sm"
                 >
-                  <SelectTrigger className="h-12">
-                    <SelectValue placeholder="Wählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {players
-                      .filter((p) => p.id !== matchPlayer2)
-                      .map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">Wählen...</option>
+                  {players
+                    .filter((p) => p.id !== matchPlayer2)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Spieler 2</Label>
-                <Select
+                <select
                   value={matchPlayer2}
-                  onValueChange={(v) => v && setMatchPlayer2(v)}
+                  onChange={(e) => setMatchPlayer2(e.target.value)}
+                  className="h-12 w-full rounded-lg border border-input bg-transparent px-3 text-sm"
                 >
-                  <SelectTrigger className="h-12">
-                    <SelectValue placeholder="Wählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {players
-                      .filter((p) => p.id !== matchPlayer1)
-                      .map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">Wählen...</option>
+                  {players
+                    .filter((p) => p.id !== matchPlayer1)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
               </div>
             </div>
             <Button
@@ -468,7 +457,10 @@ export default function AdminPage({
                   <Button
                     size="sm"
                     className="h-10"
-                    onClick={() => setActiveMatch(m)}
+                    onClick={() => {
+                      setActiveMatch(m);
+                      setShowScoring(true);
+                    }}
                   >
                     Scoring
                   </Button>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import sql from "@/lib/db";
+import sql, { parseDarts } from "@/lib/db";
 import { parseSegment, checkDartResult } from "@/lib/scoring";
 import { Dart } from "@/lib/types";
 
@@ -20,7 +20,7 @@ export async function PATCH(
       );
     }
 
-    const darts: Dart[] = turn.darts || [];
+    const darts: Dart[] = parseDarts<Dart>(turn.darts);
 
     // Undo last dart
     if (body.action === "undo") {
@@ -49,7 +49,7 @@ export async function PATCH(
       `;
 
       return NextResponse.json({
-        turn: updated,
+        turn: fixTurn(updated),
         status: "ok",
       });
     }
@@ -103,7 +103,7 @@ export async function PATCH(
       const nextTurn = await createNextTurn(turn);
 
       return NextResponse.json({
-        turn: updated,
+        turn: fixTurn(updated),
         status: "bust",
         next_turn: nextTurn,
       });
@@ -133,7 +133,7 @@ export async function PATCH(
       const matchResult = await checkMatchWon(leg.match_id, turn.player_id);
 
       return NextResponse.json({
-        turn: updated,
+        turn: fixTurn(updated),
         status: "checkout",
         leg,
         match_won: matchResult.won,
@@ -156,14 +156,14 @@ export async function PATCH(
     if (newDarts.length === 3) {
       const nextTurn = await createNextTurn(turn, remainingAfter);
       return NextResponse.json({
-        turn: updated,
+        turn: fixTurn(updated),
         status: "turn_complete",
         next_turn: nextTurn,
       });
     }
 
     return NextResponse.json({
-      turn: updated,
+      turn: fixTurn(updated),
       status: "ok",
     });
   } catch (error) {
@@ -227,6 +227,11 @@ async function createNextTurn(
   `;
 
   return newTurn;
+}
+
+// Ensure darts field is parsed array in response
+function fixTurn(turn: Record<string, unknown>) {
+  return { ...turn, darts: parseDarts<Dart>(turn.darts) };
 }
 
 async function checkMatchWon(matchId: string, playerId: string) {

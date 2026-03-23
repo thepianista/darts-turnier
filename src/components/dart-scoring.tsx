@@ -3,13 +3,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -471,22 +464,18 @@ export function DartScoring({
             <p className="text-sm font-medium">
               Wer beginnt das nächste Leg?
             </p>
-            <Select
+            <select
               value={startingPlayer}
-              onValueChange={(v) => v && setStartingPlayer(v)}
+              onChange={(e) => setStartingPlayer(e.target.value)}
+              className="h-12 w-full rounded-lg border border-input bg-transparent px-3 text-sm"
             >
-              <SelectTrigger className="h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={match.player1_id}>
-                  {match.player1_name}
-                </SelectItem>
-                <SelectItem value={match.player2_id}>
-                  {match.player2_name}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              <option value={match.player1_id}>
+                {match.player1_name}
+              </option>
+              <option value={match.player2_id}>
+                {match.player2_name}
+              </option>
+            </select>
           </div>
           <DialogFooter>
             <Button className="w-full h-12 text-lg" onClick={createLeg}>
@@ -502,22 +491,18 @@ export function DartScoring({
           <DialogHeader>
             <DialogTitle>Wer beginnt?</DialogTitle>
           </DialogHeader>
-          <Select
+          <select
             value={startingPlayer}
-            onValueChange={(v) => v && setStartingPlayer(v)}
+            onChange={(e) => setStartingPlayer(e.target.value)}
+            className="h-12 w-full rounded-lg border border-input bg-transparent px-3 text-sm"
           >
-            <SelectTrigger className="h-12">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={match.player1_id}>
-                {match.player1_name}
-              </SelectItem>
-              <SelectItem value={match.player2_id}>
-                {match.player2_name}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            <option value={match.player1_id}>
+              {match.player1_name}
+            </option>
+            <option value={match.player2_id}>
+              {match.player2_name}
+            </option>
+          </select>
           <DialogFooter>
             <Button className="w-full h-12 text-lg" onClick={createLeg}>
               Leg starten
